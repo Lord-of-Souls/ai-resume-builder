@@ -1,0 +1,4 @@
+streamlit
+google-generativeai
+apify-client
+markdown-pdf
