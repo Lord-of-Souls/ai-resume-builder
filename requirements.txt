@@ -1,4 +1,5 @@
 streamlit
-google-generativeai
-apify-client
+google-genai
+requests
+beautifulsoup4
 markdown-pdf

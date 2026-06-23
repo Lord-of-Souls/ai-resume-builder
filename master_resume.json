@@ -1,7 +1,4 @@
-# Cell 1: Define the Master Resume Profile
-import json
-
-master_resume = {
+{
   "basics": {
     "name": "Lucas Gabriel Franciscon",
     "current_titles": [
