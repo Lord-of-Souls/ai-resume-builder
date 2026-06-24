@@ -9,6 +9,8 @@ from google import genai
 from google.genai import types
 from markdown_pdf import MarkdownPdf, Section
 
+from project_selector import select_relevant_projects
+
 # =====================================================================
 #  STEP 1 — GET THE JOB DESCRIPTION FROM A LINKEDIN URL  (free, no Apify)
 # =====================================================================
@@ -91,9 +93,40 @@ def scrape_linkedin_job(job_url: str):
 #  STEP 2 — TAILOR THE RESUME WITH GEMINI  (new google-genai SDK)
 # =====================================================================
 
-def generate_resume_markdown(gemini_key: str, master_json: str, job_desc: str) -> str:
-    client = genai.Client(api_key=gemini_key)
+def call_gemini_with_fallback(client, prompt: str, config=None) -> str:
+    """Call Gemini with model fallback + exponential backoff on transient errors.
 
+    Tries the main model first; if it stays overloaded, drops to a lighter one
+    that usually has more capacity. Shared by both project selection and resume
+    generation so the retry behavior stays identical across the app.
+    """
+    models_to_try = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
+    last_error = None
+
+    for model_name in models_to_try:
+        for attempt in range(4):  # waits: 1s, 2s, 4s, then give up on this model
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                    config=config,
+                )
+                return response.text
+            except Exception as e:
+                last_error = e
+                msg = str(e)
+                transient = any(
+                    code in msg for code in ("503", "UNAVAILABLE", "429", "overload")
+                )
+                if transient and attempt < 3:
+                    time.sleep(2 ** attempt)  # 1, 2, 4 seconds
+                    continue
+                break  # non-transient error, or out of retries -> next model
+
+    raise RuntimeError(f"Gemini is still unavailable after retries: {last_error}")
+
+
+def generate_resume_markdown(client, master_json: str, job_desc: str) -> str:
     prompt = f"""
 You are an expert resume writer. Produce a one-page resume tailored to the job
 description below, using the Candidate Data as the only source of facts.
@@ -101,9 +134,11 @@ description below, using the Candidate Data as the only source of facts.
 CRITICAL RULES
 * FACTUAL ACCURACY: Use only facts present in the Candidate Data. Never invent or
   exaggerate skills, metrics, or experience.
-* TAILORING: Select and order content by relevance to the job. For PRACTICAL
-  PROJECTS, choose only the 3-4 most relevant projects and put the best fit
-  first. Mirror the job's keywords only where the candidate truly has that skill.
+* TAILORING: Select and order content by relevance to the job. The PRACTICAL
+  PROJECTS in the Candidate Data have ALREADY been pre-filtered to the most
+  relevant ones for this job — include EVERY project provided, ordered with the
+  best fit first. Mirror the job's keywords only where the candidate truly has
+  that skill.
 * NO HYPERLINKS: Write every URL as plain text exactly like "github.com/user/repo".
   NEVER use Markdown link syntax [text](url) and NEVER wrap URLs in <angle brackets>.
 * OUTPUT: Return raw Markdown only. Do NOT wrap it in ```markdown fences.
@@ -163,36 +198,7 @@ JOB DESCRIPTION:
 """
 
     config = types.GenerateContentConfig(temperature=0.2)
-
-    # Try the main model first; if it stays overloaded, drop to a lighter one
-    # that usually has more capacity.
-    models_to_try = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
-    last_error = None
-
-    for model_name in models_to_try:
-        for attempt in range(4):  # waits: 1s, 2s, 4s, then give up on this model
-            try:
-                response = client.models.generate_content(
-                    model=model_name,
-                    contents=prompt,
-                    config=config,
-                )
-                return response.text
-            except Exception as e:
-                last_error = e
-                msg = str(e)
-                transient = any(
-                    code in msg for code in ("503", "UNAVAILABLE", "429", "overload")
-                )
-                if transient and attempt < 3:
-                    time.sleep(2 ** attempt)  # 1, 2, 4 seconds
-                    continue
-                break  # non-transient error, or out of retries -> next model
-
-    # Every attempt failed.
-    raise RuntimeError(
-        f"Gemini is still unavailable after retries: {last_error}"
-    )
+    return call_gemini_with_fallback(client, prompt, config=config)
 
 
 # =====================================================================
@@ -289,7 +295,7 @@ if st.button("Generate Tailored Resume", type="primary"):
             try:
                 with open("master_resume.json", "r", encoding="utf-8") as f:
                     master_resume_text = f.read()
-                json.loads(master_resume_text)  # validate it's real JSON
+                master_dict = json.loads(master_resume_text)  # validate + keep
                 st.write("✅ Master resume loaded.")
             except FileNotFoundError:
                 status.update(label="Error", state="error")
@@ -310,10 +316,26 @@ if st.button("Generate Tailored Resume", type="primary"):
                 job_title, company_name, job_description = scrape_linkedin_job(job_url)
                 st.write(f"✅ Found: **{job_title}** at **{company_name}**")
 
+            # --- Create the Gemini client once, shared by selection + tailoring ---
+            client = genai.Client(api_key=gemini_api_key)
+
+            # --- Pick the 4 most relevant projects for THIS job ---
+            status.update(label="Selecting the most relevant projects...")
+            selected_projects = select_relevant_projects(
+                job_description,
+                master_dict.get("projects", []),
+                k=4,
+                generate_fn=lambda p: call_gemini_with_fallback(client, p),
+            )
+            tailored_dict = {**master_dict, "projects": selected_projects}
+            tailored_master_json = json.dumps(tailored_dict, ensure_ascii=False)
+            picked_names = ", ".join(p.get("name", "") for p in selected_projects)
+            st.write(f"✅ Picked {len(selected_projects)} projects: {picked_names}")
+
             # --- Tailor with Gemini ---
             status.update(label="Gemini is tailoring your resume...")
             tailored_markdown = generate_resume_markdown(
-                gemini_api_key, master_resume_text, job_description
+                client, tailored_master_json, job_description
             )
             st.write("✅ Resume tailored.")
 

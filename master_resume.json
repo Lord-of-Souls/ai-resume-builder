@@ -1,215 +1,156 @@
 {
   "basics": {
     "name": "Lucas Gabriel Franciscon",
-    "current_titles": [
-      "Data Analyst",
-      "Mechanical Engineering Student"
-    ],
+    "title": "Data Analyst",
+    "location": "Itatiba, São Paulo, Brazil",
+    "phone": "+55 11 96987-6183",
     "email": "lucasfranciscon@compreitatiba.com",
-    "phone": "+55 (11) 96987 6183",
-    "location": "Itatiba, SP, Brazil",
-    "linkedin": "linkedin.com/in/lucasfranciscon",
-    "github": "github.com/Lord-of-Souls",
-    "lattes": "lattes.cnpq.br/7349724701046994",
-    "summary": "Award-winning Data Analyst with two gold medals in national academic olympiads and a solid technical foundation in Python, SQL, and Tableau built through an intensive Data Analysis Bootcamp. Proficient in data cleaning, hypothesis testing, and data storytelling, with practical experience developing data analytics projects focused on logistics, freight transportation, and delivery sectors. Highly motivated to leverage data intelligence to optimize operations, identify growth opportunities, and drive business success through actionable insights."
+    "linkedin": "https://www.linkedin.com/in/lucasfranciscon/",
+    "github": "https://github.com/Lord-of-Souls",
+    "portfolio_lattes": "http://lattes.cnpq.br/7349724701046994",
+    "summary": "Data Analyst with a foundation in Python, SQL, and statistical analysis, pairing hands-on project work in A/B testing, hypothesis testing, and data visualization with real-world business experience applying business intelligence to operational decisions. As a business owner, used performance metrics to guide inventory, pricing, and budgeting; as an engineering intern, built analytical models and automated the tracking of test data. Skilled at turning data into clear, decision-ready insights using Python (Matplotlib, Seaborn, Plotly), SQL, and Excel. Trained through TripleTen's intensive Data Analysis Bootcamp, and a national STEM olympiad award winner in Brazil."
   },
   "skills": {
-    "programming_languages": [
-      "Python",
-      "SQL",
-      "JSON",
-      "VBA"
+    "languages_and_databases": ["Python", "SQL"],
+    "analysis": [
+      "Data cleaning and preprocessing",
+      "Exploratory data analysis",
+      "Statistical analysis",
+      "Hypothesis testing",
+      "A/B and A/A/B testing",
+      "Business intelligence (BI)",
+      "Business metrics analysis"
     ],
-    "frameworks_and_libraries": [
-      "Pandas",
-      "NumPy",
-      "Matplotlib",
-      "Seaborn",
-      "Plotly",
-      "SciPy",
-      "Streamlit"
-    ],
-    "tools": [
-      "Git",
-      "GitHub",
-      "VS Code",
-      "WSL",
-      "Tableau",
-      "Excel",
-      "CLP",
-      "CAD",
-      "Linux",
-      "Windows"
-    ],
-    "methodologies": [
-      "Exploratory Data Analysis (EDA)",
-      "A/B Testing",
-      "Forecasting",
-      "Business Intelligence",
-      "Machine Learning",
-      "Applied Statistics",
-      "Data Modeling",
-      "Data Storytelling"
-    ],
-    "soft_skills": [
-      "Analytical Rigor",
-      "Strategic Decision-Making",
-      "Business & Team Management",
-      "Data Storytelling",
-      "Problem Solving",
-      "Proactivity",
-      "Leadership",
-      "Resilience",
-      "Teamwork"
-    ]
+    "visualization": ["Matplotlib", "Seaborn", "Plotly", "Data storytelling", "Dashboards"],
+    "tools": ["Excel", "Tableau", "Git/GitHub", "Linux/WSL", "Jupyter/Anaconda"],
+    "python_libraries": ["pandas", "NumPy", "SciPy", "Matplotlib", "Seaborn", "Plotly"],
+    "foundational": ["Machine Learning"],
+    "note_for_tailoring": "Machine Learning is foundational / in progress — present it as a learning area, not a core proven skill, until the forecasting projects ship."
   },
   "experience": [
     {
-      "company": "DEMAPE",
-      "role": "R&D Engineering Intern",
-      "duration": "2024",
+      "company": "Buffalo Bill (previously Beco da Carne)",
+      "title": "Business Owner",
+      "location": "Itatiba, São Paulo, Brazil",
+      "start": "2023-01",
+      "end": "present",
       "highlights": [
-        "Homologation of new products.",
-        "Study of new methodologies.",
-        "Scientific studies of products.",
-        "Formulation of spreadsheets and reports."
+        "Own and operate a local business, managing financial analysis, budgeting, and data-driven decision-making across daily operations.",
+        "Monitor performance metrics to inform inventory, pricing, and operational-efficiency decisions.",
+        "Lead recruitment and team management, and maintain and analyze financial and operational records."
       ]
     },
     {
-      "company": "BECO DA CARNE",
-      "role": "Manager",
-      "duration": "2023 - 2024",
+      "company": "Demape",
+      "title": "Engineering Intern",
+      "location": "Itatiba, São Paulo, Brazil",
+      "start": "2024-09",
+      "end": "2025-03",
       "highlights": [
-        "Customer service, purchasing, and inventory replenishment.",
-        "Accounts payable and receivable, and SAT invoice issuance.",
-        "Administrative tasks and people management."
-      ]
-    },
-    {
-      "company": "GT VEÍCULOS",
-      "role": "Salesperson",
-      "duration": "2021 - 2023",
-      "highlights": [
-        "Purchase and sale of vehicles.",
-        "Customer service and preparation of vehicles for showroom display."
+        "Built and managed analytical models and technical datasets to support product development and certification.",
+        "Created automated spreadsheets to track testing parameters and performance metrics.",
+        "Conducted end-to-end R&D experiments, managing the collection and analysis of product-testing data.",
+        "Used CAD software for new-product development, testing, and certification."
       ]
     }
   ],
   "projects": [
     {
-      "name": "Data Storytelling & Retail Market Analysis",
-      "url": "https://github.com/Lord-of-Souls/Data-Storytelling",
-      "tech_stack": ["Python", "Pandas", "Plotly", "Seaborn"],
-      "highlights": [
-        "Evaluated and selected a business type based on regional market intelligence data.",
-        "Performed full data analysis and hypothesis testing, drawing actionable conclusions.",
-        "Developed a technical analysis for peer analysts and product managers, as well as an executive PowerPoint presentation tailored for senior management."
-      ]
-    },
-    {
-      "name": "Making Data-Driven Business Decisions (A/B Testing)",
-      "url": "https://github.com/Lord-of-Souls/Data-Driven-Decisions",
-      "tech_stack": ["Python"],
-      "highlights": [
-        "Formulated and prioritized hypotheses using frameworks like WSJF (Weighted Shortest Job First), ICE, and RICE.",
-        "Designed and evaluated A/B testing to analyze impacts and test statistical hypotheses.",
-        "Visualized results with charts to prioritize business implementations."
-      ]
-    },
-    {
-      "name": "User Data Analytics & Business Intelligence",
-      "url": "https://github.com/Lord-of-Souls/Business-Analysis",
-      "tech_stack": ["Python"],
-      "highlights": [
-        "Applied Business Management knowledge to analyze data and create/test hypotheses based on user metrics and theoretical BI frameworks.",
-        "Developed visualizations and tracked key baseline metrics such as retention rate, purchase volume, and customer acquisition cost (CAC)."
-      ]
-    },
-    {
-      "name": "Data Collection and Storage (SQL Integration)",
-      "url": "https://github.com/Lord-of-Souls/SQL-Integration",
-      "tech_stack": ["Python", "JSON", "SQL"],
-      "highlights": [
-        "Worked with databases, SQL, and JSON to identify product issues.",
-        "Performed hypothesis testing and planned an advertising campaign based on data findings."
-      ]
+      "name": "Instacart — Customer Shopping Habits",
+      "url": "https://github.com/Lord-of-Souls/Instacart-Project",
+      "stack": ["Python", "pandas", "Matplotlib"],
+      "description": "Cleaned a large retail dataset and produced a report on customer shopping behavior, supported by data visualizations."
     },
     {
       "name": "Statistical Data Analysis",
       "url": "https://github.com/Lord-of-Souls/Statistical-Data-Analysis",
-      "tech_stack": ["Python", "Matplotlib", "SciPy"],
-      "highlights": [
-        "Performed preliminary data analysis and studied customer behavior.",
-        "Conducted statistical tests and visualized results with charts and detailed analysis."
-      ]
+      "stack": ["Python", "SciPy", "Matplotlib"],
+      "description": "Performed preliminary analysis of customer behavior and ran statistical hypothesis tests, with results visualized in charts."
     },
     {
-      "name": "Instacart Project - Data Manipulation",
-      "url": "https://github.com/Lord-of-Souls/Instacart-Project",
-      "tech_stack": ["Python", "Matplotlib"],
-      "highlights": [
-        "Cleaned the data and prepared a report providing insights into customer shopping habits, featuring data visualizations."
-      ]
+      "name": "SQL Integration",
+      "url": "https://github.com/Lord-of-Souls/SQL-Integration",
+      "stack": ["Python", "SQL", "JSON"],
+      "description": "Worked with relational databases, SQL, and JSON to identify product issues, test hypotheses, and plan an advertising campaign."
     },
     {
-      "name": "Software Development Tools (Web App Deployment)",
-      "url": "https://github.com/Lord-of-Souls/Software-Development-Project",
-      "tech_stack": ["Python", "Linux", "WSL"],
-      "highlights": [
-        "Created and managed Python virtual environments.",
-        "Developed a web application and deployed it to a cloud service to make it publicly accessible."
-      ]
+      "name": "Business Analysis (BI)",
+      "url": "https://github.com/Lord-of-Souls/Business-Analysis",
+      "stack": ["Python"],
+      "description": "Applied business-intelligence frameworks and business-metrics analysis, building and testing hypotheses from user metrics."
     },
     {
-      "name": "Integrated Project 1 & 2",
+      "name": "Data-Driven Business Decisions",
+      "url": "https://github.com/Lord-of-Souls/Data-Driven-Decisions",
+      "stack": ["Python"],
+      "description": "Ran A/B tests and statistical analyses to evaluate impact and prioritize business implementations, with results visualized in charts."
+    },
+    {
+      "name": "Data Storytelling",
+      "url": "https://github.com/Lord-of-Souls/Data-Storytelling",
+      "stack": ["Python", "Seaborn", "Plotly"],
+      "description": "Completed full analysis and hypothesis testing and prepared an intuitive visual presentation to communicate findings."
+    },
+    {
+      "name": "Integrated Project 2 — App UX (A/A/B Testing)",
       "url": "https://github.com/Lord-of-Souls/Integrated-Project-2",
-      "tech_stack": ["Python"],
-      "highlights": [
-        "Applied acquired knowledge to identify patterns, plan advertising campaigns, perform A/A/B testing, and draw conclusions regarding an app's UX."
-      ]
+      "stack": ["Python"],
+      "description": "Conducted A/A/B testing to draw conclusions about an application's user experience."
     },
     {
-      "name": "Data Cleaning and Manipulation",
-      "url": "https://github.com/Lord-of-Souls/Data-Cleaning-and-Manipulation",
-      "tech_stack": ["Python"],
-      "highlights": [
-        "Performed data preprocessing including handling data types, missing values, and duplicates to analyze the dataset and draw conclusions."
-      ]
+      "name": "Software Development Tools — Web App Deployment",
+      "url": "https://github.com/Lord-of-Souls/Software-Development-Project",
+      "stack": ["Python", "Linux", "WSL"],
+      "description": "Built a Python web application, managed virtual environments, and deployed it to a cloud service for public access."
+    },
+    {
+      "name": "Automation",
+      "url": "https://github.com/Lord-of-Souls/Automation-Project",
+      "stack": ["Python"],
+      "description": "Automated repetitive data-processing tasks with Python scripting."
+    },
+    {
+      "name": "Predictions and Forecasts",
+      "url": "https://github.com/Lord-of-Souls/Predictions-and-Forecasts-Project",
+      "stack": ["Python"],
+      "description": "Forecasted trends from historical data using Python."
+    },
+    {
+      "name": "Final Project",
+      "url": "https://github.com/Lord-of-Souls/Final-Project",
+      "stack": ["Python"],
+      "description": "Capstone applying the full data-analysis lifecycle — collection, cleaning, hypothesis testing, and visualization — to a real dataset."
     }
   ],
   "education": [
     {
-      "institution": "TripleTen",
-      "degree": "Data Analysis Bootcamp (400+ hours)",
-      "duration": "2025 - 2026"
+      "institution": "TripleTen Brasil",
+      "program": "Data Analysis Bootcamp (Data Processing)",
+      "start": "2025-04",
+      "end": "2026-04",
+      "status": "completed"
     },
     {
-      "institution": "USF Itatiba",
-      "degree": "Mechanical Engineering - 3rd semester",
-      "duration": "2024 - Present"
-    },
-    {
-      "institution": "ETEC Rosa Perrone Scavone",
-      "degree": "Electromechanics Technician",
-      "duration": "2021 - 2023"
-    },
-    {
-      "institution": "Colégio Bom Jesus Itatiba",
-      "degree": "High School",
-      "duration": "2020 - 2023"
+      "institution": "Universidade São Francisco",
+      "program": "Mechanical Engineering — coursework",
+      "start": "2024-08",
+      "end": "2025-02",
+      "status": "did not complete"
     }
   ],
-  "awards_and_certifications": [
-    "2nd place in Engineering at 7th FICEM.",
-    "SEBRAE entrepreneurship certificate at 7th FICEM.",
-    "Honorable Mention at OBB (Brazilian Olympiad of Biology).",
-    "Gold medal at OBA (Brazilian Olympiad of Astronomy and Astronautics)."
+  "certifications": [
+    "Aspiring Data Analyst",
+    "Data Storytelling",
+    "Data Collection and Warehousing (SQL)"
   ],
   "languages": [
-    "Portuguese: Native",
-    "English: Fluent C2 (TLG Canada Level 5 certification)",
-    "Spanish: Elementary proficiency",
-    "German: Elementary proficiency",
-    "Russian: Elementary proficiency"
+    {"language": "Portuguese", "level": "Native / Bilingual"},
+    {"language": "English", "level": "Professional Working"},
+    {"language": "Russian", "level": "Elementary"},
+    {"language": "German", "level": "Elementary"}
+  ],
+  "awards": [
+    "Gold medal, Brazilian Astronomy Olympiad (2020)",
+    "Qualified for the second phase, Brazilian Physics Olympiad"
   ]
 }
