@@ -93,40 +93,150 @@ def scrape_linkedin_job(job_url: str):
 #  STEP 2 — TAILOR THE RESUME WITH GEMINI  (new google-genai SDK)
 # =====================================================================
 
-def call_gemini_with_fallback(client, prompt: str, config=None) -> str:
-    """Call Gemini with model fallback + exponential backoff on transient errors.
+def _call_gemini(gemini_key: str, prompt: str, prefer_pro: bool = False) -> str:
+    """Send a prompt to Gemini with retry/backoff and an automatic model fallback.
 
-    Tries the main model first; if it stays overloaded, drops to a lighter one
-    that usually has more capacity. Shared by both project selection and resume
-    generation so the retry behavior stays identical across the app.
+    When prefer_pro=True, the call starts on gemini-2.5-pro with extended thinking
+    enabled, then automatically falls back to flash -> flash-lite if Pro is
+    overloaded (503), rate-limited/unavailable on your tier (429/permission), or
+    otherwise fails. The cheaper models are the failsafe, so a Pro outage never
+    blocks the app.
     """
-    models_to_try = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
+    client = genai.Client(api_key=gemini_key)
+
+    if prefer_pro:
+        models_to_try = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite"]
+    else:
+        models_to_try = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
+
     last_error = None
 
     for model_name in models_to_try:
+        # Enable extended thinking only on Pro; flash thinks dynamically by default
+        # and flash-lite stays fast.
+        if model_name == "gemini-2.5-pro":
+            config = types.GenerateContentConfig(
+                temperature=0.2,
+                thinking_config=types.ThinkingConfig(thinking_budget=8192),
+            )
+        else:
+            config = types.GenerateContentConfig(temperature=0.2)
+
         for attempt in range(4):  # waits: 1s, 2s, 4s, then give up on this model
             try:
                 response = client.models.generate_content(
-                    model=model_name,
-                    contents=prompt,
-                    config=config,
+                    model=model_name, contents=prompt, config=config
                 )
                 return response.text
             except Exception as e:
                 last_error = e
-                msg = str(e)
                 transient = any(
-                    code in msg for code in ("503", "UNAVAILABLE", "429", "overload")
+                    code in str(e) for code in ("503", "UNAVAILABLE", "429", "overload")
                 )
                 if transient and attempt < 3:
                     time.sleep(2 ** attempt)  # 1, 2, 4 seconds
                     continue
-                break  # non-transient error, or out of retries -> next model
+                break  # non-transient error or out of retries -> next (cheaper) model
 
     raise RuntimeError(f"Gemini is still unavailable after retries: {last_error}")
 
 
-def generate_resume_markdown(client, master_json: str, job_desc: str) -> str:
+
+def analyze_keyword_match(gemini_key: str, job_desc: str, resume_text: str):
+    """Compare the job description to the tailored resume.
+
+    Returns (matched, missing): two lists of the most important ATS keywords from
+    the job — the ones already represented in the resume, and the ones still absent.
+    Fails soft (returns empty lists) so the bonus report can never break the main
+    resume flow.
+    """
+    prompt = f"""You are an ATS (applicant tracking system) keyword analyzer.
+
+From the JOB DESCRIPTION, extract the 10-15 most important hard skills, tools, and
+qualifications a recruiter or ATS would screen for. Then decide, for each one,
+whether it appears in the TAILORED RESUME (match by meaning, not just exact string).
+
+Return ONLY valid JSON — no prose, no explanation, no code fences — in exactly
+this shape:
+{{"matched": ["keyword", "..."], "missing": ["keyword", "..."]}}
+
+- "matched": important job keywords that ARE represented in the resume.
+- "missing": important job keywords that are NOT in the resume.
+
+JOB DESCRIPTION:
+{job_desc}
+
+TAILORED RESUME:
+{resume_text}
+"""
+    try:
+        raw = _call_gemini(gemini_key, prompt).strip()
+        raw = re.sub(r"^```(?:json)?", "", raw).strip()
+        raw = re.sub(r"```$", "", raw).strip()
+        data = json.loads(raw)
+        return list(data.get("matched", [])), list(data.get("missing", []))
+    except Exception:
+        return [], []
+
+
+def generate_cover_letter_guide(
+    gemini_key: str, master_json: str, job_desc: str, company: str, title: str
+) -> str:
+    """Return a Markdown BRIEF that helps the candidate write their OWN cover letter.
+
+    Not the letter itself — directions, company/role points to know, the candidate's
+    strongest angles for this job, and a few writing tips. Fails soft (returns "").
+    """
+    prompt = f"""You are a career coach. Help the candidate write their OWN cover
+letter — do NOT write the letter for them. Produce a concise, skimmable BRIEF in
+Markdown.
+
+STRICT RULES
+* Use ONLY facts found in the CANDIDATE DATA and the JOB DESCRIPTION.
+* For company facts, use ONLY what the JOB DESCRIPTION actually states. If something
+  useful is NOT in the description (mission, products, recent news, values), list it
+  as a "Research:" item to look up — NEVER invent or guess company facts.
+* Pull the candidate's strengths ONLY from the CANDIDATE DATA. Never invent skills.
+* Do not write any part of the actual cover letter or any sample paragraphs.
+
+Output exactly these four sections, with these headings:
+
+### What this role is really about
+2-3 bullets on the role's core priorities and what the employer most values, based
+on the job description.
+
+### What to know before you write
+Key points from the job description worth referencing. Add "Research:" bullets for
+important things the description does not cover.
+
+### Your strongest angles for this job
+The 3-4 most relevant items from the candidate's data for THIS role, each with a
+short note on how to frame it. Candidate data only.
+
+### Writing tips
+3-4 specific, actionable tips for this particular letter — what to open with, tone,
+what to avoid, and target length.
+
+Keep it tight. Do NOT write the cover letter itself.
+
+---
+CANDIDATE DATA (JSON):
+{master_json}
+
+---
+JOB DESCRIPTION:
+{job_desc}
+
+---
+ROLE: {title} at {company}
+"""
+    try:
+        return _call_gemini(gemini_key, prompt, prefer_pro=True).strip()
+    except Exception:
+        return ""
+
+
+def generate_resume_markdown(gemini_key: str, master_json: str, job_desc: str) -> str:
     prompt = f"""
 You are an expert resume writer. Produce a one-page resume tailored to the job
 description below, using the Candidate Data as the only source of facts.
@@ -134,14 +244,17 @@ description below, using the Candidate Data as the only source of facts.
 CRITICAL RULES
 * FACTUAL ACCURACY: Use only facts present in the Candidate Data. Never invent or
   exaggerate skills, metrics, or experience.
-* TAILORING: Select and order content by relevance to the job. The PRACTICAL
-  PROJECTS in the Candidate Data have ALREADY been pre-filtered to the most
-  relevant ones for this job — include EVERY project provided, ordered with the
-  best fit first. Mirror the job's keywords only where the candidate truly has
-  that skill.
-* NO HYPERLINKS: Write every URL as plain text with NO scheme — exactly like
-  "github.com/user/repo", never "https://github.com/user/repo". NEVER use Markdown
-  link syntax [text](url) and NEVER wrap URLs in <angle brackets>.
+* TAILORING: Select and order content by relevance to the job. For PRACTICAL
+  PROJECTS, choose only the 3-4 most relevant projects and put the best fit first.
+* MIRROR THE JOB'S WORDING: When the candidate genuinely has a skill, tool, or
+  qualification that the JOB DESCRIPTION names, describe it using the job's EXACT
+  terminology instead of a synonym (e.g., if the job says "data visualization",
+  write "data visualization", not "charts"; if it says "stakeholder communication",
+  use that exact phrase). This helps the resume pass ATS keyword screening. NEVER
+  invent or imply a skill the candidate lacks just to match wording — factual
+  accuracy always overrides mirroring.
+* NO HYPERLINKS: Write every URL as plain text exactly like "github.com/user/repo".
+  NEVER use Markdown link syntax [text](url) and NEVER wrap URLs in <angle brackets>.
 * OUTPUT: Return raw Markdown only. Do NOT wrap it in ```markdown fences.
 
 FOLLOW THIS EXACT STRUCTURE (keep the section headings and their order, and keep
@@ -171,11 +284,6 @@ One or two sentences. Project Link: plain-text url
 
 **Degree / Program** — Institution | dates
 
-**Certifications:** list every certification from the Candidate Data, comma-separated
-
-**Awards & Achievements:** list every award from the Candidate Data, including the
-candidate's national STEM / academic olympiad achievements, comma-separated
-
 ## SKILLS & TOOLS
 
 **Programming Languages:** ...
@@ -202,24 +310,27 @@ CANDIDATE DATA (JSON):
 JOB DESCRIPTION:
 {job_desc}
 """
-
-    config = types.GenerateContentConfig(temperature=0.2)
-    return call_gemini_with_fallback(client, prompt, config=config)
+    return _call_gemini(gemini_key, prompt, prefer_pro=True)
 
 
 # =====================================================================
 #  STEP 3 — MARKDOWN -> PDF
 # =====================================================================
 
-# One CSS block for one Section. Splitting the resume into two Sections is what
-# forced the body onto a second page (markdown-pdf starts every Section on a new
-# page). We now render everything as a SINGLE Section and center only the header
-# by emitting it as inline-styled HTML, so the body flows right under it with no
-# blank gap. The `a` rule strips hyperlink styling if a link slips through.
-PAGE_CSS = """
+# Two CSS blocks: one centers the name + contact header, the other styles the body
+# left-aligned. PyMuPDF (used by markdown-pdf) supports this subset of CSS. The `a`
+# rule is a final safety net that strips hyperlink styling if a link slips through.
+HEADER_CSS = """
+h1 { font-family: Helvetica, Arial, sans-serif; font-size: 20pt;
+     text-align: center; margin: 0 0 2px 0; }
+p  { font-family: Helvetica, Arial, sans-serif; font-size: 10pt;
+     text-align: center; margin: 1px 0; color: #333333; }
+a  { color: inherit; text-decoration: none; }
+"""
+
+BODY_CSS = """
 body { font-family: Helvetica, Arial, sans-serif; font-size: 10.5pt;
        color: #1a1a1a; line-height: 1.35; }
-h1 { font-family: Helvetica, Arial, sans-serif; }
 h2 { font-size: 12pt; margin: 12px 0 5px 0; padding-bottom: 2px;
      border-bottom: 1.5px solid #333333; }
 p  { margin: 3px 0; }
@@ -228,20 +339,18 @@ a { color: inherit; text-decoration: none; }
 """
 
 
-def clean_links(md: str) -> str:
-    """Normalize links: remove Markdown/angle-bracket link syntax AND strip the
-    scheme so URLs read like "github.com/user/repo" instead of "https://...".
-    Some AI screeners and parsers choke on or ignore full hyperlinks, so plain
-    domain-relative text is the safer form."""
-    md = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", md)      # [text](url) -> text
+def strip_hyperlinks(md: str) -> str:
+    """Safety net: if Gemini ignores the rule, turn any links back into plain text."""
+    md = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", md)   # [text](url) -> text
     md = re.sub(r"<((?:https?://)?[^>\s]+)>", r"\1", md)  # <url> -> url
-    md = re.sub(r"https?://(?:www\.)?", "", md)            # https://www.x -> x
     return md
 
 
-def _build_single_page_markdown(markdown_text: str) -> str:
-    """Combine a centered HTML header with the left-aligned Markdown body into one
-    string, so the whole resume renders as a single Section (one continuous page)."""
+def convert_markdown_to_pdf(markdown_text: str, output_filename: str) -> str:
+    markdown_text = strip_hyperlinks(markdown_text).strip()
+
+    # Split the resume at the first "## " heading: everything above it is the
+    # centered header (name + contact); everything from it down is the body.
     split_at = markdown_text.find("\n## ")
     if split_at == -1:
         header_md, body_md = markdown_text, ""
@@ -249,28 +358,10 @@ def _build_single_page_markdown(markdown_text: str) -> str:
         header_md = markdown_text[:split_at].strip()
         body_md = markdown_text[split_at:].strip()
 
-    header_html = []
-    for line in (ln.strip() for ln in header_md.splitlines() if ln.strip()):
-        if line.startswith("# "):
-            header_html.append(
-                f'<h1 style="text-align:center; font-size:20pt; margin:0 0 2px 0;">'
-                f'{line[2:].strip()}</h1>'
-            )
-        else:
-            header_html.append(
-                f'<p style="text-align:center; font-size:10pt; color:#333333; '
-                f'margin:1px 0;">{line}</p>'
-            )
-
-    return ("\n".join(header_html) + "\n\n" + body_md).strip()
-
-
-def convert_markdown_to_pdf(markdown_text: str, output_filename: str) -> str:
-    markdown_text = clean_links(markdown_text).strip()
-    combined = _build_single_page_markdown(markdown_text)
-
     pdf = MarkdownPdf(toc_level=0)
-    pdf.add_section(Section(combined), user_css=PAGE_CSS)
+    pdf.add_section(Section(header_md), user_css=HEADER_CSS)
+    if body_md:
+        pdf.add_section(Section(body_md), user_css=BODY_CSS)
     pdf.save(output_filename)
     return output_filename
 
@@ -316,7 +407,7 @@ if st.button("Generate Tailored Resume", type="primary"):
             try:
                 with open("master_resume.json", "r", encoding="utf-8") as f:
                     master_resume_text = f.read()
-                master_dict = json.loads(master_resume_text)  # validate + keep
+                json.loads(master_resume_text)  # validate it's real JSON
                 st.write("✅ Master resume loaded.")
             except FileNotFoundError:
                 status.update(label="Error", state="error")
@@ -337,28 +428,26 @@ if st.button("Generate Tailored Resume", type="primary"):
                 job_title, company_name, job_description = scrape_linkedin_job(job_url)
                 st.write(f"✅ Found: **{job_title}** at **{company_name}**")
 
-            # --- Create the Gemini client once, shared by selection + tailoring ---
-            client = genai.Client(api_key=gemini_api_key)
-
-            # --- Pick the 4 most relevant projects for THIS job ---
-            status.update(label="Selecting the most relevant projects...")
-            selected_projects = select_relevant_projects(
+            # --- Select the most relevant projects (deterministic cap at k=4) ---
+            status.update(label="Selecting your most relevant projects...")
+            resume_dict = json.loads(master_resume_text)
+            resume_dict["projects"] = select_relevant_projects(
                 job_description,
-                master_dict.get("projects", []),
+                resume_dict.get("projects", []),
                 k=4,
-                generate_fn=lambda p: call_gemini_with_fallback(client, p),
+                # Selection returns indices only, so Flash is plenty (cheap + fast).
+                generate_fn=lambda p: _call_gemini(gemini_api_key, p),
             )
-            tailored_dict = {**master_dict, "projects": selected_projects}
-            tailored_master_json = json.dumps(tailored_dict, ensure_ascii=False)
-            picked_names = ", ".join(p.get("name", "") for p in selected_projects)
-            st.write(f"✅ Picked {len(selected_projects)} projects: {picked_names}")
+            tailored_resume_text = json.dumps(resume_dict, ensure_ascii=False, indent=2)
+            st.write(
+                f"✅ Selected {len(resume_dict['projects'])} best-fit projects."
+            )
 
-            # --- Tailor with Gemini ---
-            status.update(label="Gemini is tailoring your resume...")
+            # --- Tailor with Gemini (Pro + extended thinking, falls back to Flash) ---
+            status.update(label="Gemini Pro is tailoring your resume...")
             tailored_markdown = generate_resume_markdown(
-                client, tailored_master_json, job_description
+                gemini_api_key, tailored_resume_text, job_description
             )
-            tailored_markdown = clean_links(tailored_markdown)
             st.write("✅ Resume tailored.")
 
             # --- PDF ---
@@ -368,6 +457,21 @@ if st.button("Generate Tailored Resume", type="primary"):
             pdf_filename = f"Resume_{safe_company}_{safe_title}.pdf"
             convert_markdown_to_pdf(tailored_markdown, pdf_filename)
             st.write("✅ PDF ready.")
+
+            # --- ATS keyword match report (bonus; fails soft) ---
+            status.update(label="Checking keyword match against the job...")
+            matched_kw, missing_kw = analyze_keyword_match(
+                gemini_api_key, job_description, tailored_markdown
+            )
+            st.write("✅ Keyword report ready.")
+
+            # --- Cover-letter brief (guidance to write it yourself; fails soft) ---
+            status.update(label="Building your cover-letter brief...")
+            cover_guide = generate_cover_letter_guide(
+                gemini_api_key, master_resume_text, job_description,
+                company_name, job_title,
+            )
+            st.write("✅ Cover-letter brief ready.")
             status.update(label="Done!", state="complete", expanded=False)
 
         st.success(f"Generated resume tailored for {company_name}.")
@@ -379,6 +483,41 @@ if st.button("Generate Tailored Resume", type="primary"):
                 mime="application/pdf",
                 type="primary",
             )
+
+        # --- ATS keyword match report ---
+        total_kw = len(matched_kw) + len(missing_kw)
+        if total_kw:
+            score = round(100 * len(matched_kw) / total_kw)
+            st.subheader(f"🎯 ATS Keyword Match: {score}%")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("**✅ Covered**")
+                for kw in matched_kw:
+                    st.markdown(f"- {kw}")
+            with col2:
+                st.markdown("**⚠️ Missing**")
+                if missing_kw:
+                    for kw in missing_kw:
+                        st.markdown(f"- {kw}")
+                else:
+                    st.markdown("_None — strong coverage._")
+            if missing_kw:
+                st.caption(
+                    "Missing keywords are things the job asks for that aren't in your "
+                    "resume. If you genuinely have one, add it to master_resume.json so "
+                    "future runs can use it. If you don't have it, treat it as a real "
+                    "gap — don't fabricate it."
+                )
+
+        # --- Cover letter brief ---
+        if cover_guide:
+            st.subheader("📝 Cover Letter Brief")
+            st.caption(
+                "Directions for writing your own cover letter — not the letter itself. "
+                "A self-written letter reads as genuine; this just does the prep."
+            )
+            st.markdown(cover_guide)
+
         with st.expander("Preview"):
             st.markdown(tailored_markdown)
 
