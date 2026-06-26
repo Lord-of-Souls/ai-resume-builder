@@ -139,8 +139,9 @@ CRITICAL RULES
   relevant ones for this job — include EVERY project provided, ordered with the
   best fit first. Mirror the job's keywords only where the candidate truly has
   that skill.
-* NO HYPERLINKS: Write every URL as plain text exactly like "github.com/user/repo".
-  NEVER use Markdown link syntax [text](url) and NEVER wrap URLs in <angle brackets>.
+* NO HYPERLINKS: Write every URL as plain text with NO scheme — exactly like
+  "github.com/user/repo", never "https://github.com/user/repo". NEVER use Markdown
+  link syntax [text](url) and NEVER wrap URLs in <angle brackets>.
 * OUTPUT: Return raw Markdown only. Do NOT wrap it in ```markdown fences.
 
 FOLLOW THIS EXACT STRUCTURE (keep the section headings and their order, and keep
@@ -169,6 +170,11 @@ One or two sentences. Project Link: plain-text url
 ## EDUCATION & CERTIFICATIONS
 
 **Degree / Program** — Institution | dates
+
+**Certifications:** list every certification from the Candidate Data, comma-separated
+
+**Awards & Achievements:** list every award from the Candidate Data, including the
+candidate's national STEM / academic olympiad achievements, comma-separated
 
 ## SKILLS & TOOLS
 
@@ -205,20 +211,15 @@ JOB DESCRIPTION:
 #  STEP 3 — MARKDOWN -> PDF
 # =====================================================================
 
-# Two CSS blocks: one centers the name + contact header, the other styles the body
-# left-aligned. PyMuPDF (used by markdown-pdf) supports this subset of CSS. The `a`
-# rule is a final safety net that strips hyperlink styling if a link slips through.
-HEADER_CSS = """
-h1 { font-family: Helvetica, Arial, sans-serif; font-size: 20pt;
-     text-align: center; margin: 0 0 2px 0; }
-p  { font-family: Helvetica, Arial, sans-serif; font-size: 10pt;
-     text-align: center; margin: 1px 0; color: #333333; }
-a  { color: inherit; text-decoration: none; }
-"""
-
-BODY_CSS = """
+# One CSS block for one Section. Splitting the resume into two Sections is what
+# forced the body onto a second page (markdown-pdf starts every Section on a new
+# page). We now render everything as a SINGLE Section and center only the header
+# by emitting it as inline-styled HTML, so the body flows right under it with no
+# blank gap. The `a` rule strips hyperlink styling if a link slips through.
+PAGE_CSS = """
 body { font-family: Helvetica, Arial, sans-serif; font-size: 10.5pt;
        color: #1a1a1a; line-height: 1.35; }
+h1 { font-family: Helvetica, Arial, sans-serif; }
 h2 { font-size: 12pt; margin: 12px 0 5px 0; padding-bottom: 2px;
      border-bottom: 1.5px solid #333333; }
 p  { margin: 3px 0; }
@@ -227,18 +228,20 @@ a { color: inherit; text-decoration: none; }
 """
 
 
-def strip_hyperlinks(md: str) -> str:
-    """Safety net: if Gemini ignores the rule, turn any links back into plain text."""
-    md = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", md)   # [text](url) -> text
+def clean_links(md: str) -> str:
+    """Normalize links: remove Markdown/angle-bracket link syntax AND strip the
+    scheme so URLs read like "github.com/user/repo" instead of "https://...".
+    Some AI screeners and parsers choke on or ignore full hyperlinks, so plain
+    domain-relative text is the safer form."""
+    md = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", md)      # [text](url) -> text
     md = re.sub(r"<((?:https?://)?[^>\s]+)>", r"\1", md)  # <url> -> url
+    md = re.sub(r"https?://(?:www\.)?", "", md)            # https://www.x -> x
     return md
 
 
-def convert_markdown_to_pdf(markdown_text: str, output_filename: str) -> str:
-    markdown_text = strip_hyperlinks(markdown_text).strip()
-
-    # Split the resume at the first "## " heading: everything above it is the
-    # centered header (name + contact); everything from it down is the body.
+def _build_single_page_markdown(markdown_text: str) -> str:
+    """Combine a centered HTML header with the left-aligned Markdown body into one
+    string, so the whole resume renders as a single Section (one continuous page)."""
     split_at = markdown_text.find("\n## ")
     if split_at == -1:
         header_md, body_md = markdown_text, ""
@@ -246,10 +249,28 @@ def convert_markdown_to_pdf(markdown_text: str, output_filename: str) -> str:
         header_md = markdown_text[:split_at].strip()
         body_md = markdown_text[split_at:].strip()
 
+    header_html = []
+    for line in (ln.strip() for ln in header_md.splitlines() if ln.strip()):
+        if line.startswith("# "):
+            header_html.append(
+                f'<h1 style="text-align:center; font-size:20pt; margin:0 0 2px 0;">'
+                f'{line[2:].strip()}</h1>'
+            )
+        else:
+            header_html.append(
+                f'<p style="text-align:center; font-size:10pt; color:#333333; '
+                f'margin:1px 0;">{line}</p>'
+            )
+
+    return ("\n".join(header_html) + "\n\n" + body_md).strip()
+
+
+def convert_markdown_to_pdf(markdown_text: str, output_filename: str) -> str:
+    markdown_text = clean_links(markdown_text).strip()
+    combined = _build_single_page_markdown(markdown_text)
+
     pdf = MarkdownPdf(toc_level=0)
-    pdf.add_section(Section(header_md), user_css=HEADER_CSS)
-    if body_md:
-        pdf.add_section(Section(body_md), user_css=BODY_CSS)
+    pdf.add_section(Section(combined), user_css=PAGE_CSS)
     pdf.save(output_filename)
     return output_filename
 
@@ -337,6 +358,7 @@ if st.button("Generate Tailored Resume", type="primary"):
             tailored_markdown = generate_resume_markdown(
                 client, tailored_master_json, job_description
             )
+            tailored_markdown = clean_links(tailored_markdown)
             st.write("✅ Resume tailored.")
 
             # --- PDF ---

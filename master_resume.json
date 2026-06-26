@@ -11,7 +11,7 @@
     "summary": "Data Analyst with a foundation in Python, SQL, and statistical analysis, pairing hands-on project work in A/B testing, hypothesis testing, and data visualization with real-world business experience applying business intelligence to operational decisions. As a business owner, used performance metrics to guide inventory, pricing, and budgeting; as an engineering intern, built analytical models and automated the tracking of test data. Skilled at turning data into clear, decision-ready insights using Python (Matplotlib, Seaborn, Plotly), SQL, and Excel. Trained through TripleTen's intensive Data Analysis Bootcamp, and a national STEM olympiad award winner in Brazil."
   },
   "skills": {
-    "languages_and_databases": ["Python", "SQL"],
+    "languages_and_databases": ["Python", "SQL", "PowerShell", "Batch"],
     "analysis": [
       "Data cleaning and preprocessing",
       "Exploratory data analysis",
@@ -19,13 +19,14 @@
       "Hypothesis testing",
       "A/B and A/A/B testing",
       "Business intelligence (BI)",
-      "Business metrics analysis"
+      "Business metrics analysis",
+      "Data automation"
     ],
     "visualization": ["Matplotlib", "Seaborn", "Plotly", "Data storytelling", "Dashboards"],
-    "tools": ["Excel", "Tableau", "Git/GitHub", "Linux/WSL", "Jupyter/Anaconda"],
-    "python_libraries": ["pandas", "NumPy", "SciPy", "Matplotlib", "Seaborn", "Plotly"],
-    "foundational": ["Machine Learning"],
-    "note_for_tailoring": "Machine Learning is foundational / in progress — present it as a learning area, not a core proven skill, until the forecasting projects ship."
+    "tools": ["Advanced Excel & VBA / Google Sheets", "Tableau", "Power BI", "Git/GitHub", "Linux/WSL", "Jupyter/Anaconda", "AI tools (LLM APIs)"],
+    "python_libraries": ["pandas", "NumPy", "SciPy", "Matplotlib", "Seaborn", "Plotly", "scikit-learn"],
+    "applied": ["Machine Learning (K-means clustering, churn prediction)"],
+    "note_for_tailoring": "Machine Learning is a demonstrated, applied skill backed by the Predictions and Forecasts project (customer segmentation with K-means and churn prediction using scikit-learn). Present it as a real, project-proven competency when a job calls for it. Do NOT overstate depth: this is applied ML for analytics, not deep-learning, MLOps, or production model deployment — avoid implying that level of experience."
   },
   "experience": [
     {
@@ -50,6 +51,7 @@
         "Built and managed analytical models and technical datasets to support product development and certification.",
         "Created automated spreadsheets to track testing parameters and performance metrics.",
         "Conducted end-to-end R&D experiments, managing the collection and analysis of product-testing data.",
+        "Applied Process Improvement and Operational Excellence methodologies to optimize R&D testing and product-certification workflows.",
         "Used CAD software for new-product development, testing, and certification."
       ]
     }
@@ -104,53 +106,59 @@
       "description": "Built a Python web application, managed virtual environments, and deployed it to a cloud service for public access."
     },
     {
-      "name": "Automation",
+      "name": "Automation — YouTube Trending Dashboard (BI)",
       "url": "https://github.com/Lord-of-Souls/Automation-Project",
-      "stack": ["Python"],
-      "description": "Automated repetitive data-processing tasks with Python scripting."
+      "stack": ["Python", "Tableau", "PowerPoint"],
+      "description": "Analyzed YouTube trending metrics and built a dynamic Tableau dashboard to surface insights on regional content popularity. Developed stacked area charts, pie charts, and highlight tables to translate the data into a clear narrative and answer key business questions."
     },
     {
-      "name": "Predictions and Forecasts",
+      "name": "Predictions and Forecasts — Customer Churn Prediction",
       "url": "https://github.com/Lord-of-Souls/Predictions-and-Forecasts-Project",
-      "stack": ["Python"],
-      "description": "Forecasted trends from historical data using Python."
+      "stack": ["Python", "scikit-learn", "SciPy"],
+      "description": "Built customer-retention and churn-prediction models on historical data, segmenting customers with K-means clustering to profile high-risk versus loyal users. Translated the findings into actionable marketing strategies — including referral programs and targeted loyalty benefits — to increase customer engagement."
     },
     {
-      "name": "Final Project",
+      "name": "Final Project — Call Center Performance Dashboard",
       "url": "https://github.com/Lord-of-Souls/Final-Project",
-      "stack": ["Python"],
-      "description": "Capstone applying the full data-analysis lifecycle — collection, cleaning, hypothesis testing, and visualization — to a real dataset."
+      "stack": ["Python", "Tableau", "PowerPoint"],
+      "description": "Capstone analyzing call-center operator performance: cleaned the data, defined customer-service KPIs, and used distribution charts with quartile-based analysis to classify the team and surface inefficiencies. Delivered a live Tableau dashboard to support strategic management decisions."
     }
   ],
   "education": [
     {
       "institution": "TripleTen Brasil",
-      "program": "Data Analysis Bootcamp (Data Processing)",
-      "start": "2025-04",
-      "end": "2026-04",
-      "status": "completed"
+      "program": "Data Analyst Bootcamp (400+ hours)",
+      "start": "2025-07",
+      "end": "2026-02",
+      "status": "completed",
+      "credential_id": "202603DAPT000954"
     },
     {
       "institution": "Universidade São Francisco",
-      "program": "Mechanical Engineering — coursework",
+      "program": "Mechanical Engineering coursework (quantitative foundation)",
       "start": "2024-08",
       "end": "2025-02",
-      "status": "did not complete"
+      "status": "pivoted to data analysis",
+      "note": "Completed foundational engineering coursework — calculus, statistics, and programming — that built a strong quantitative base, then pivoted fully into data analysis. Frame as an intentional career pivot, never as an incomplete or abandoned degree."
     }
   ],
   "certifications": [
+    "Data Analyst — TripleTen completion certificate (credential ID 202603DAPT000954), Feb 2026",
     "Aspiring Data Analyst",
     "Data Storytelling",
     "Data Collection and Warehousing (SQL)"
   ],
   "languages": [
     {"language": "Portuguese", "level": "Native / Bilingual"},
-    {"language": "English", "level": "Professional Working"},
+    {"language": "English", "level": "Fluent C2"},
     {"language": "Russian", "level": "Elementary"},
     {"language": "German", "level": "Elementary"}
   ],
   "awards": [
-    "Gold medal, Brazilian Astronomy Olympiad (2020)",
-    "Qualified for the second phase, Brazilian Physics Olympiad"
+    "Gold medal — OBA (Brazilian Astronomy Olympiad), 2023",
+    "Gold medal — OBA (Brazilian Astronomy Olympiad), 2021",
+    "Gold medal — OBF (Brazilian Physics Olympiad), 2020",
+    "Entrepreneurship award — SEBRAE, FICEM 2021",
+    "2nd place, Engineering category — FICEM 2021"
   ]
 }
