@@ -244,27 +244,34 @@ description below, using the Candidate Data as the only source of facts.
 CRITICAL RULES
 * FACTUAL ACCURACY: Use only facts present in the Candidate Data. Never invent or
   exaggerate skills, metrics, or experience.
-* TAILORING: Select and order content by relevance to the job. For PRACTICAL
-  PROJECTS, choose only the 3-4 most relevant projects and put the best fit first.
-* MIRROR THE JOB'S WORDING: When the candidate genuinely has a skill, tool, or
-  qualification that the JOB DESCRIPTION names, describe it using the job's EXACT
-  terminology instead of a synonym (e.g., if the job says "data visualization",
-  write "data visualization", not "charts"; if it says "stakeholder communication",
-  use that exact phrase). This helps the resume pass ATS keyword screening. NEVER
-  invent or imply a skill the candidate lacks just to match wording — factual
+* PROJECTS ARE PRE-SELECTED: The Candidate Data already contains only the projects
+  chosen for this job. Include ALL projects provided — do not drop any.
+* COMPLETENESS — DO NOT PRUNE LISTS: In SKILLS & TOOLS, CERTIFICATIONS & AWARDS,
+  EDUCATION, and LANGUAGES, include EVERY item from the Candidate Data. You may
+  reorder so the most job-relevant items lead, but NEVER omit a skill, tool,
+  language, methodology, certification, award, or degree. These sections are scanned
+  by ATS — completeness matters more than brevity here.
+* TAILORING: Tailor only the INTRODUCTION and the project descriptions to the job,
+  and reorder skills so relevant ones come first. Do not shorten the credential lists.
+* MIRROR THE JOB'S WORDING: When the candidate genuinely has a skill the JOB
+  DESCRIPTION names, use the job's EXACT terminology instead of a synonym (e.g., if
+  the job says "data visualization", write "data visualization", not "charts").
+  NEVER invent or imply a skill the candidate lacks just to match wording — factual
   accuracy always overrides mirroring.
 * NO HYPERLINKS: Write every URL as plain text exactly like "github.com/user/repo".
   NEVER use Markdown link syntax [text](url) and NEVER wrap URLs in <angle brackets>.
 * OUTPUT: Return raw Markdown only. Do NOT wrap it in ```markdown fences.
 
-FOLLOW THIS EXACT STRUCTURE (keep the section headings and their order, and keep
-the blank lines exactly as shown so each block renders on its own line):
+FOLLOW THIS EXACT STRUCTURE. Put a BLANK LINE between EVERY entry — every project,
+every education line, every certification, every award, every skill line, every
+language — so each renders on its own line. Use the heading levels exactly as shown
+(the name is #, the two contact lines are ####, sections are ##).
 
 # FULL NAME IN CAPITALS
 
-City, State | email | phone
+#### City, State | email | phone
 
-linkedin url | github url
+#### linkedin url | github url
 
 ## INTRODUCTION
 
@@ -274,33 +281,46 @@ A tailored 3-4 sentence professional summary.
 
 **1) Project Title**
 
-One or two sentences describing the project, tailored to the job. Project Link: plain-text url
+One or two sentences tailored to the job. Project Link: plain-text url
 
 **2) Project Title**
 
-One or two sentences. Project Link: plain-text url
+One or two sentences tailored to the job. Project Link: plain-text url
 
-## EDUCATION & CERTIFICATIONS
+(repeat for EVERY project in the Candidate Data, blank line between each)
 
-**Degree / Program** — Institution | dates
+## EDUCATION
+
+**Program / Degree** — Institution | dates
+
+**Program / Degree** — Institution | dates
+
+(one line per education entry, blank line between each — never run them together)
+
+## CERTIFICATIONS & AWARDS
+
+List EVERY certification and EVERY award from the Candidate Data, each on its own
+line, blank line between each. Include all academic olympiad medals and honors.
 
 ## SKILLS & TOOLS
 
-**Programming Languages:** ...
+**Programming Languages:** every item, comma-separated
 
-**Frameworks & Libraries:** ...
+**Frameworks & Libraries:** every item
 
-**Tools & Environment:** ...
+**Tools & Environment:** every item
 
-**Methodologies:** ...
+**Methodologies:** every item
 
-**Soft Skills:** ... | ... | ...
+**Soft Skills:** every item, separated by " | "
 
 ## LANGUAGES
 
-**Portuguese:** Native
+**Portuguese:** ...
 
 **English:** ...
+
+(one line per language, blank line between each)
 
 ---
 CANDIDATE DATA (JSON):
@@ -317,20 +337,17 @@ JOB DESCRIPTION:
 #  STEP 3 — MARKDOWN -> PDF
 # =====================================================================
 
-# Two CSS blocks: one centers the name + contact header, the other styles the body
-# left-aligned. PyMuPDF (used by markdown-pdf) supports this subset of CSS. The `a`
-# rule is a final safety net that strips hyperlink styling if a link slips through.
-HEADER_CSS = """
-h1 { font-family: Helvetica, Arial, sans-serif; font-size: 20pt;
-     text-align: center; margin: 0 0 2px 0; }
-p  { font-family: Helvetica, Arial, sans-serif; font-size: 10pt;
-     text-align: center; margin: 1px 0; color: #333333; }
-a  { color: inherit; text-decoration: none; }
-"""
-
-BODY_CSS = """
+# One CSS block for the whole resume (single PDF section -> no page break).
+# The name is an h1 and the two contact lines are h4 headings; both are centered.
+# The body never uses h1/h4, so centering those does not affect anything below.
+# PyMuPDF (used by markdown-pdf) supports this subset of CSS. The `a` rule strips
+# hyperlink styling if a link ever slips through.
+RESUME_CSS = """
 body { font-family: Helvetica, Arial, sans-serif; font-size: 10.5pt;
        color: #1a1a1a; line-height: 1.35; }
+h1 { font-size: 20pt; text-align: center; margin: 0 0 2px 0; }
+h4 { font-size: 10pt; font-weight: normal; text-align: center; color: #333333;
+     margin: 1px 0; }
 h2 { font-size: 12pt; margin: 12px 0 5px 0; padding-bottom: 2px;
      border-bottom: 1.5px solid #333333; }
 p  { margin: 3px 0; }
@@ -348,20 +365,9 @@ def strip_hyperlinks(md: str) -> str:
 
 def convert_markdown_to_pdf(markdown_text: str, output_filename: str) -> str:
     markdown_text = strip_hyperlinks(markdown_text).strip()
-
-    # Split the resume at the first "## " heading: everything above it is the
-    # centered header (name + contact); everything from it down is the body.
-    split_at = markdown_text.find("\n## ")
-    if split_at == -1:
-        header_md, body_md = markdown_text, ""
-    else:
-        header_md = markdown_text[:split_at].strip()
-        body_md = markdown_text[split_at:].strip()
-
+    # Single section = single continuous flow = no forced page break.
     pdf = MarkdownPdf(toc_level=0)
-    pdf.add_section(Section(header_md), user_css=HEADER_CSS)
-    if body_md:
-        pdf.add_section(Section(body_md), user_css=BODY_CSS)
+    pdf.add_section(Section(markdown_text), user_css=RESUME_CSS)
     pdf.save(output_filename)
     return output_filename
 
